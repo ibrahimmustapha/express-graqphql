@@ -10,12 +10,14 @@ const {
 } = require('graphql') 
 const app = express()
 
+// Fake authors data
 const authors = [
     { id: 1, name: 'Mustapha B. Ibrahim'},
     { id: 2, name: 'Kelvin A. Boateng'},
     { id: 3, name: 'Prince KK. Adjei'}
 ]
 
+// Fake books data
 const books = [
     { id: 1, name: 'Cracking the Coding Interview', authorId: 1},
     { id: 2, name: 'Book of Life', authorId: 1},
@@ -27,7 +29,7 @@ const books = [
     { id: 8, name: 'Ada the Snake Girl', authorId: 3},
 ]
 
-// * Define a booktype
+// * Define a book object-type
 const BookType = new GraphQLObjectType({
     name: 'Books',
     description: 'This represents a book written by an author',
@@ -44,13 +46,18 @@ const BookType = new GraphQLObjectType({
     })
 })
 
-// * Define authortype
+// * Define author object-type
 const AuthorType = new GraphQLObjectType({
     name: 'Author',
     description: 'This represents an author of a books',
     fields: () => ({
         id: { type: new GraphQLNonNull(GraphQLInt) },
         name: { type: new GraphQLNonNull(GraphQLString) },
+        books: { type: new GraphQLList(BookType), 
+            resolve: (author) => {
+                return books.filter(book => book.authorId === author.id)
+            }
+        }
     })
 })
 
@@ -65,11 +72,32 @@ const RootQueryType = new GraphQLObjectType({
             description: 'List of all books',
             resolve: () => books
         },
+
+        // * Single book query field
+        book: {
+            type: BookType,
+            description: 'A Single Book',
+            args: {
+                id: { type: GraphQLInt }
+            },
+            resolve: (parent, args) => books.find(book => book.id === args.id)
+        },
+
         authors: {
             // * List of book type
             type: new GraphQLList(AuthorType),
             description: 'List of all authors',
             resolve: () => authors
+        },
+
+        // * Single author query field
+        author: {
+            type: AuthorType,
+            description: 'A single Author',
+            args: {
+                id: { type: GraphQLInt }
+            },
+            resolve: (parent, args) => authors.find(author => author.id === args.id)
         }
     })
 })
